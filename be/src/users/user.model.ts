@@ -1,13 +1,24 @@
-import { Schema, model } from "mongoose";
+import { Model, Schema, model } from "mongoose";
+import jwt from "jsonwebtoken";
+import NotAuthorizedError from "../errors/not-authorized-error";
 
 interface User {
     email: string;
     password: string;
     createdAt?: Date;
     updatedAt?: Date;
+    generateToken: () => string;
 }
 
-const userSchema = new Schema<User>({
+interface UserDoc extends Document, User {
+
+}
+
+interface UserModel extends Model<UserDoc> {
+    findByCredentials: (email: string, password: string) => Promise<UserDoc | never>;
+}
+
+const userSchema = new Schema<UserDoc, UserModel>({
     email: { 
         type: String, 
         required: true, 
@@ -44,4 +55,16 @@ const userSchema = new Schema<User>({
     },
 });
 
-export const UserModel = model<User>("User", userSchema);
+userSchema.methods.generateToken = function () {
+    return jwt.sign({ id: this._id }, process.env.JWT_SECRET as string, { expiresIn: "1d" });
+}
+
+userSchema.statics.findByCredentials = async function (email: string, password: string) {
+    const user = await this.findOne({ email }).select("+password").orFail(new NotAuthorizedError("User not found"));
+    
+    // password
+    
+    return user;
+}
+
+export const UserModel = model<UserDoc, UserModel>("User", userSchema);

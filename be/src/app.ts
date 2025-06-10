@@ -5,6 +5,7 @@ import { errorHandler } from './middlewares/error-handler';
 import shortnerRouter from './shortner/shortner.router';
 import userRouter from './users/user.router';
 import mongoose from 'mongoose';
+import { authMiddleware } from './middlewares/auth';
 
 
 const app = express();
@@ -14,8 +15,11 @@ const { PORT, MONGO_URL } = process.env;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(shortnerRouter);
 app.use(userRouter);
+
+app.use(authMiddleware);
+
+app.use(shortnerRouter);
 
 app.use(errorHandler);
 
