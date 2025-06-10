@@ -4,6 +4,7 @@ import NotAuthorizedError from "../errors/not-authorized-error";
 import { compare, genSalt, hash } from "bcryptjs";
 
 interface User {
+    _id?: Schema.Types.ObjectId;
     email: string;
     password: string;
     createdAt?: Date;
@@ -74,7 +75,6 @@ userSchema.methods.generateToken = function () {
 
 userSchema.statics.findByCredentials = async function (email: string, password: string) {
     const user = await this.findOne({ email }).select("+password").orFail(new NotAuthorizedError("User not found"));
-    
     const isPasswordValid = await compare(password, user.password);
     if (!isPasswordValid) throw new NotAuthorizedError("Invalid password");
     

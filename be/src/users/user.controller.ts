@@ -57,7 +57,7 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
                     httpOnly: true,
                 }
             )
-            .send();
+            .send({ id: user._id });
     } catch (error) {
         next(error);
     }
@@ -68,5 +68,5 @@ export const logoutUser = async (_req: Request, res: Response, _next: NextFuncti
     res.clearCookie("accessToken", {
         httpOnly: true,
     });
-    res.send();
+    res.send({ message: "Logged out successfully" });
 }

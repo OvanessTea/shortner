@@ -7,11 +7,16 @@ import userRouter from './users/user.router';
 import mongoose from 'mongoose';
 import { authMiddleware } from './middlewares/auth';
 import cookieParser from "cookie-parser";
-
+import cors from "cors";
 
 const app = express();
 
 const { PORT, MONGO_URL } = process.env;
+
+app.use(cors({
+  origin: process.env.CLIENT_URL,
+  credentials: true,
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
