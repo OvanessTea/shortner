@@ -1,4 +1,4 @@
-export const getShortURL = async (originalURL: string) => {
+export const getShortURL = async (originalURL: string): Promise<string> => {
     const response = await fetch(process.env.SHORTNER_API_URL as string, {
         method: 'POST',
         headers: {
