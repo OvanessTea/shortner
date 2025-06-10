@@ -7,6 +7,7 @@ import BadRequestError from "../errors/bad-request-error";
 
 export const createShortURL = async (req: Request, res: Response, next: NextFunction) => {
     const { url } = req.body;
+    const ownerId = res.locals.user.id;
 
     try {
         const shortLink = await getShortURL(url);
@@ -14,6 +15,7 @@ export const createShortURL = async (req: Request, res: Response, next: NextFunc
         const newShortURL = await ShortnerModel.create({
             originalLink: url,
             shortLink,
+            owner: ownerId,
         });
 
         res.status(201).json({
@@ -21,6 +23,28 @@ export const createShortURL = async (req: Request, res: Response, next: NextFunc
             originalLink: newShortURL.originalLink,
             shortLink: newShortURL.shortLink,
         });
+    } catch (error) {
+        if (error instanceof MongooseError.ValidationError) {
+            const errors = transformError(error);
+            return next(new BadRequestError(errors[0].message));
+        }
+
+        next(error);
+    }
+}
+
+export const getShortURLs = async (req: Request, res: Response, next: NextFunction) => {
+    const ownerId = res.locals.user.id;
+
+    try {
+        const shortURLs = await ShortnerModel.find({ owner: ownerId }) || [];
+
+        res.status(200).json(shortURLs.map((shortURL) => ({
+            id: shortURL._id,
+            originalLink: shortURL.originalLink,
+            shortLink: shortURL.shortLink,
+        }))
+        );
     } catch (error) {
         if (error instanceof MongooseError.ValidationError) {
             const errors = transformError(error);
