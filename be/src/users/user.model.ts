@@ -1,6 +1,7 @@
 import { Model, Schema, model } from "mongoose";
 import jwt from "jsonwebtoken";
 import NotAuthorizedError from "../errors/not-authorized-error";
+import { compare, genSalt, hash } from "bcryptjs";
 
 interface User {
     email: string;
@@ -55,6 +56,18 @@ const userSchema = new Schema<UserDoc, UserModel>({
     },
 });
 
+userSchema.pre("save", async function (next) {
+    if (!this.isModified("password")) return next();
+
+    try {
+        const salt = await genSalt(10);
+        this.password = await hash(this.password, salt);
+        next();
+    } catch (error) {
+        next(error as Error);
+    }
+});
+
 userSchema.methods.generateToken = function () {
     return jwt.sign({ id: this._id }, process.env.JWT_SECRET as string, { expiresIn: "1d" });
 }
@@ -62,7 +75,8 @@ userSchema.methods.generateToken = function () {
 userSchema.statics.findByCredentials = async function (email: string, password: string) {
     const user = await this.findOne({ email }).select("+password").orFail(new NotAuthorizedError("User not found"));
     
-    // password
+    const isPasswordValid = await compare(password, user.password);
+    if (!isPasswordValid) throw new NotAuthorizedError("Invalid password");
     
     return user;
 }
